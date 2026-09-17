@@ -1,86 +1,72 @@
-const User = require('../models/user.model');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const User = require('../models/user.model');
+const { generateToken } = require('../utils/jwt');
 
 /**
  * Register a new user
- * Handles the logic for validating and storing a new user in the database
+ * POST /api/auth/register
  */
-const registerUser = async (req, res) => {
+const register = async (req, res, next) => {
   try {
-    // Extract fields from the request body
-    const { name, email, password } = req.body;
+    const { username, email, password } = req.body;
 
-    // 1. Validate that all three required fields are present
-    if (!name || !email || !password) {
+    // Basic validation
+    if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Name, email, and password are required'
+        message: 'Username, email, and password are required'
       });
     }
 
-    // 2. Check whether a user with the same email already exists
-    const existingUser = await User.findOne({ email });
-    
-    // If the email already exists, return HTTP 409 Conflict
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long'
+      });
+    }
+
+    // Check for existing user
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: 'A user with this email already exists'
+        message: 'Email is already registered'
       });
     }
 
-    // 3. Hash the password before saving
-    // A salt is random data added to the password before hashing to make it completely unique
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash(password, salt);
 
-    // 4. Create the user using the existing User model, passing the hashed password
+    // Create user
     const newUser = await User.create({
-      name,
-      email,
-      password: hashedPassword
+      username,
+      email: email.toLowerCase(),
+      passwordHash
     });
 
-    // 4. Return a successful response containing specific fields
-    // NEVER return the password
-    return res.status(201).json({
+    // Generate JWT
+    const token = generateToken(newUser._id);
+
+    // Return safe user object (removes passwordHash)
+    res.status(201).json({
       success: true,
-      data: {
-        _id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        createdAt: newUser.createdAt
-      }
+      token,
+      user: newUser.toSafeObject()
     });
-
   } catch (error) {
-    // 5. Handle MongoDB duplicate-key errors (error code 11000) safely
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: 'A user with this email already exists'
-      });
-    }
-
-    // 6. Handle any other unexpected server errors
-    console.error('Registration error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    next(error);
   }
 };
 
 /**
  * Login a user
- * Handles verifying email and password
+ * POST /api/auth/login
  */
-const loginUser = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Validate that email and password are provided
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -88,10 +74,10 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // 2. Find the user by email
-    const user = await User.findOne({ email });
-
-    // 3. If user doesn't exist, return generic error
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    // Generic error message for both non-existent user and bad password
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -99,87 +85,58 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // 4. Compare provided password with stored hashed password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    // 5. If password doesn't match, return same generic error
-    if (!isPasswordValid) {
+    // Compare passwords
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    
+    if (!isMatch) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
 
-    // 6. Generate a JWT token containing the user's ID
-    const token = jwt.sign(
-      { sub: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    // Generate JWT
+    const token = generateToken(user._id);
 
-    // 7. Return success response with token and safe user data
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       token,
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        createdAt: user.createdAt
-      }
+      user: user.toSafeObject()
     });
-
   } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    next(error);
   }
 };
 
 /**
  * Get current authenticated user
- * Handles returning the user's profile information
+ * GET /api/auth/me
  */
-const getCurrentUser = async (req, res) => {
+const getMe = async (req, res, next) => {
   try {
-    // 1. Get the user ID from the verified JWT token (attached by middleware)
-    const userId = req.user.sub;
+    // userId comes from the auth.middleware.js
+    const userId = req.user.userId;
 
-    // 2. Find the user in MongoDB
     const user = await User.findById(userId);
-
-    // 3. If user doesn't exist (e.g., deleted after token issuance), return error
+    
     if (!user) {
-      return res.status(401).json({
+      return res.status(404).json({
         success: false,
-        message: 'User no longer exists'
+        message: 'User account not found'
       });
     }
 
-    // 4. Return success response with safe user data (exclude password)
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        createdAt: user.createdAt
-      }
+      user: user.toSafeObject()
     });
-
   } catch (error) {
-    console.error('Get current user error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    next(error);
   }
 };
 
 module.exports = {
-  registerUser,
-  loginUser,
-  getCurrentUser
+  register,
+  login,
+  getMe
 };

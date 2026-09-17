@@ -3,6 +3,8 @@ const cors = require('cors');
 
 // Import routes
 const healthRoutes = require('./routes/health.routes');
+const authRoutes = require('./routes/auth.routes');
+const userRoutes = require('./routes/user.routes');
 
 // Import middleware
 const notFoundHandler = require('./middleware/notFound.middleware');
@@ -18,6 +20,8 @@ app.use(cors());
 
 // Register API routes
 app.use('/api', healthRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // Middleware: 404 Not Found handler for undefined routes
 app.use(notFoundHandler);

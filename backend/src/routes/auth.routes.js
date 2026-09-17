@@ -1,18 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
-const { authenticateToken } = require('../middleware/auth.middleware');
+const { protect } = require('../middleware/auth.middleware');
 
-// Route for user registration
 // POST /api/auth/register
-router.post('/register', authController.registerUser);
+router.post('/register', authController.register);
 
-// Route for user login
 // POST /api/auth/login
-router.post('/login', authController.loginUser);
+router.post('/login', authController.login);
 
-// Route for getting current authenticated user
-// GET /api/auth/me
-router.get('/me', authenticateToken, authController.getCurrentUser);
+// GET /api/auth/me (Protected Route)
+router.get('/me', protect, authController.getMe);
 
 module.exports = router;

@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
 
 /**
- * Middleware to verify JWT tokens
- * Expects header: Authorization: Bearer <token>
+ * Authentication Middleware
+ * Protects routes by validating the JWT token from the Authorization header
  */
-const authenticateToken = (req, res, next) => {
+const protect = (req, res, next) => {
   try {
     // 1. Get the Authorization header
     const authHeader = req.headers.authorization || req.headers.Authorization;
@@ -28,23 +28,37 @@ const authenticateToken = (req, res, next) => {
     }
 
     // 4. Verify the token using the secret
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not configured');
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
 
-    // 5. Attach the user identity to the request object
-    // The payload from Phase 5.6 was { sub: user._id }
-    req.user = decodedToken;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 6. Pass control to the next middleware/controller
+    // 5. Attach user identity to request object
+    // We only attach what's in the JWT payload (the userId)
+    req.user = {
+      userId: decoded.userId
+    };
+
     next();
   } catch (error) {
-    // Catch invalid or expired tokens
+    // Handle specific JWT errors
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. Token has expired.'
+      });
+    }
+    
     return res.status(401).json({
       success: false,
-      message: 'Invalid or expired token.'
+      message: 'Access denied. Invalid token.'
     });
   }
 };
 
-module.exports = {
-  authenticateToken
-};
+module.exports = { protect };
