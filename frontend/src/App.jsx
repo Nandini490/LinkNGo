@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+
 function App() {
   const [healthMessage, setHealthMessage] = useState(null)
   const [isHealthLoading, setIsHealthLoading] = useState(true)
@@ -48,7 +50,7 @@ function App() {
     setIsJourneysLoading(true)
     setJourneysError(null)
     try {
-      const response = await fetch('http://localhost:5001/api/journeys', {
+      const response = await fetch(`${API_BASE_URL}/api/journeys`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -71,7 +73,7 @@ function App() {
 
   const fetchCurrentUser = async (token) => {
     try {
-      const response = await fetch('http://localhost:5001/api/auth/me', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -97,7 +99,7 @@ function App() {
 
   useEffect(() => {
     // Fetch data from the Express backend
-    fetch('http://localhost:5001/api/health')
+    fetch(`${API_BASE_URL}/api/health`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok')
@@ -134,7 +136,7 @@ function App() {
     setIsLoggingIn(true)
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -178,7 +180,7 @@ function App() {
     setIsRegistering(true)
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -230,7 +232,7 @@ function App() {
     const token = localStorage.getItem('linkngo_token')
 
     try {
-      const response = await fetch('http://localhost:5001/api/journeys', {
+      const response = await fetch(`${API_BASE_URL}/api/journeys`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -272,7 +274,7 @@ function App() {
     const token = localStorage.getItem('linkngo_token')
 
     try {
-      const response = await fetch(`http://localhost:5001/api/journeys/${joinJourneyId}/join`, {
+      const response = await fetch(`${API_BASE_URL}/api/journeys/${joinJourneyId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -309,7 +311,7 @@ function App() {
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/api/journeys/${journeyId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/journeys/${journeyId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
