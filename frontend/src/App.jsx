@@ -526,35 +526,35 @@ function App() {
           </div>
         ) : (
           <div>
-            <h2>Login</h2>
-            {loginError && <p style={{ color: 'red', marginBottom: '1rem' }}>{loginError}</p>}
+            <h2 style={{ color: '#333', marginBottom: '1.5rem' }}>Login</h2>
+            {loginError && <p style={{ color: 'red', marginBottom: '1rem', backgroundColor: '#ffe6e6', padding: '0.5rem', borderRadius: '4px' }}>{loginError}</p>}
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px' }}>
               <div>
-                <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem' }}>Email:</label>
+                <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Email:</label>
                 <input 
                   type="email" 
                   id="email" 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
-                  style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '0.6rem', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
                 />
               </div>
               <div>
-                <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem' }}>Password:</label>
+                <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Password:</label>
                 <input 
                   type="password" 
                   id="password" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
-                  style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '0.6rem', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
                 />
               </div>
-              <button type="submit" disabled={isLoggingIn} style={{ padding: '0.5rem', cursor: isLoggingIn ? 'not-allowed' : 'pointer', marginTop: '0.5rem' }}>
+              <button type="submit" disabled={isLoggingIn} style={{ padding: '0.6rem', cursor: isLoggingIn ? 'not-allowed' : 'pointer', marginTop: '0.5rem', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}>
                 {isLoggingIn ? 'Logging in...' : 'Login'}
               </button>
             </form>
             <div style={{ marginTop: '1rem' }}>
-              <p>Don't have an account? <button onClick={() => { setIsRegisterView(true); setLoginError(null); }} style={{ padding: '0.2rem 0.5rem', cursor: 'pointer' }}>Register</button></p>
+              <p>Don't have an account? <button onClick={() => { setIsRegisterView(true); setLoginError(null); }} style={{ padding: '0.2rem 0.5rem', cursor: 'pointer', background: 'none', border: 'none', color: '#007bff', textDecoration: 'underline' }}>Register</button></p>
             </div>
           </div>
         )}
